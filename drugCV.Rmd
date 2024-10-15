@@ -1,0 +1,510 @@
+---
+title: "Drug CV: `r (params$x)`"
+author: "CAMARADES / AD-SOLES-CT"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+
+output: 
+  tint::tintPdf:
+  template: "tintPdf-template.tex"
+
+
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{longtable}
+- \usepackage{array}
+- \usepackage{multirow}
+- \newcommand{\blandscape}{\begin{landscape}}
+- \newcommand{\elandscape}{\end{landscape}}
+- \DeclareUnicodeCharacter{2009}{\,}
+- \DeclareUnicodeCharacter{3B1}{$\alpha$}
+- \DeclareUnicodeCharacter{2265}{$\geq$}
+- \DeclareUnicodeCharacter{2261}{$\equiv$}
+
+tables: yes
+
+params:
+  x: levetiracetam
+---
+
+```{r library, echo=FALSE, include=FALSE}
+knitr::opts_chunk$set(tidy = FALSE, echo=FALSE, warning=FALSE, cache.extra = packageVersion('tint'))
+
+options(htmltools.dir.version = FALSE)
+library(googlesheets4)
+library(dplyr)
+library(knitr)
+library(tint)
+library(tidyr)
+library(kableExtra)
+library(stringr)
+library(ggplot2)
+library(RColorBrewer)
+library(ggrepel)
+library(textclean)
+library(aws.s3)
+library(magick)
+library(stringr)
+library(htmltools)
+library(httr)
+library(xml2)
+library(rvest)
+library(meta)
+library(metafor)
+library(metaviz)
+library(jsonlite)
+library(DBI)
+```
+
+
+```{r setup, include=FALSE}
+# googleSheetId <- "1j1wzkibgoGxyJvmYjI-fWDYvWNpW1k6sDgTFxKq7QcI"
+# googlesheets4::gs4_deauth()
+# drugScores2017<-read.csv("drugScores2017.csv")
+# 
+source("configure.R")
+source("getClinicalTrialsData.R")
+
+drugSummary<-googlesheets4::read_sheet(googleSheetId, sheet = "drugSummary")
+
+publicationList <-googlesheets4::read_sheet(googleSheetId, sheet = "publicationList") 
+clinicalStudyList <- RMySQL::dbReadTable(con, "ReLiSyRClinicalStudies")
+invivoStudies<- RMySQL::dbReadTable(con, "ad_invivo_citations")
+```
+
+# ReLiSyR data
+## Overview
+```{r drugscores, echo=FALSE, warning=F}
+selecteddrugranklist <- drugSummary %>%
+  filter(Drug %in% params$x)%>%
+  select(
+    "Drug",
+    "drugScore",
+    "nPublication",
+    "efficacyScore"  ,
+    "safetyScore"  ,
+    "nParticipants" ,
+    "qualityScore")%>%t()
+
+row.names(selecteddrugranklist)<- c("Drug","Clinical Drug Score", "Number of clinical publications","Median Efficacy Score (-2 - 4)","Median Safety Score (0-3)","Median number of participants","Median Quality Score (out of 24)")
+
+
+
+kbl(selecteddrugranklist, digits=3)%>%
+   row_spec(0, bold=TRUE)
+
+
+
+```
+
+```{r fig-nocap-margin-first, fig.margin=TRUE, fig.width=4, fig.height=4, fig.cap="Violin plot of drug scores, selected drug shown in red", cache=TRUE, echo=FALSE, warning=FALSE}
+drugScores<-data.frame(x=drugSummary$Drug,y=drugSummary$drugScore)
+selectedDrugScore<-drugScores%>%
+  filter(drugScores$x==params$x)%>%
+  select("y")%>%
+  as.numeric()
+
+drugScoresPlot<-ggplot(drugScores, aes(y=y, x=""))+
+  labs(y="Drug Score", x="")+
+  geom_violin(trim=F, fill="cadetblue2")+
+  geom_dotplot(dotsize=0.8, binaxis='y', stackdir='center', binwidth=0.25)+
+  annotate(geom="point", x="", y=selectedDrugScore, shape=13, colour="red3", size=5,stroke=2)
+
+drugScoresPlot
+
+
+```
+
+```{r fig-nocap-margin-second, fig.margin=TRUE, fig.width=4, fig.height=4, cache=TRUE, echo=FALSE, fig.cap="Clinical subscores scatter plot, selected drug shown in black"}
+
+drugbubble<-function(){
+  df<-drugSummary[drugSummary$Drug==params$x,]
+  drugSafety<-df$safetyScore
+  drugEfficacy<-df$efficacyScore
+  
+  livedrugrankchart <- ggplot(
+    drugSummary,
+    aes(
+      x = safetyScore,
+      y = efficacyScore,
+      size= nParticipants,
+      color= qualityScore
+    ))+ 
+    scale_color_gradient(low="yellow", high="red", limits=c(0,24))+ 
+    geom_point(alpha=1)+
+    # scale_size("studySizeScore", range=c(1,4))
+    theme(legend.position = "right")+
+    labs(x="Safety Score",
+         y="Efficacy Score",
+         color="Quality Score",
+         size="nParticipants")+
+    xlim(0,3)+
+    ylim(-2,4)
+  #+lims(size=c(1,4))
+  
+  
+  drugbubble<-livedrugrankchart+annotate(geom = "point", x =  drugSafety, y =  drugEfficacy, shape=13, size=5,stroke=1, color="black")
+  
+  drugbubble
+  
+}
+
+drugbubble()
+
+```
+\ 
+
+Current results summary of (i) clinical review: For each publication, we calculated a distance score based on Euclidean distance of efficacy [*E*] and safety [*S*] scores weighted by [*w*] comprising of quality score, *q* and study size, *nParticipants*:
+
+$$\textrm{distance score} = \sqrt {|\overrightarrow{E}(wE)^2 + (wS)^2|} \times \overrightarrow{d}$$
+
+where 
+
+$$ w = \sqrt { (\frac{\sum q}{24})^2 + (\frac{nParticipants}{1000})^2}$$
+
+$\overrightarrow{E}$ = direction of effect of efficacy, where:  
+if $E$ < 0, $\overrightarrow{E}$ = -1; and if $E$ > 0, $\overrightarrow{E}$ = +1;  
+
+and
+$\overrightarrow{d}$ = direction of effect of distance score, where
+
+$\overrightarrow{d} = +1$ if $(\overrightarrow{E}(wE)^2 + (wS)^2) > 0$;
+
+$\overrightarrow{d} = -1$ if $(\overrightarrow{E}(wE)^2 + (wS)^2) < 0$  
+
+
+Separately, we calculate median subscores for efficacy, safety, quality, and number of participants across all publications for each drug; (ii) *animal in vivo* and (iii) *in vitro* review are reported here using pooled effect sizes by random effects meta-analysis based on median survival (animal in vivo) and cell death (in vitro) for drugs where these are described in 5 or more experiments in 3 or more publications.
+
+\newpage
+
+
+## Clinical Review
+
+Table of number of clinical studies and number of patients for `r params$x` by disease, study type and phase. 
+
+```{r study design overview, warning=F,message=F}
+clinicalPubs <- publicationList %>%
+  filter(Drug %in% params$x) %>%
+  select(
+    "Title",
+    "Disease",
+    "Year",
+    "studyType",
+    "phase",
+    "nPatients"
+  )
+
+clinicalPubs$studyType[clinicalPubs$studyType=="Interventional trial"] = "interventional"
+clinicalPubs$phase[clinicalPubs$phase=="not reported"] = "Not specified"
+clinicalPubs$phase[clinicalPubs$phase== 'c("Phase II", "Phase III")'] = "Phase II/III"
+
+
+studyTypeCount<-function(){
+  
+  studyTypeOverview<-clinicalPubs%>%
+    group_by(Disease, studyType)%>%
+    summarise(nStudies = n())
+  
+  phaseOverview<-clinicalPubs%>%
+    filter(clinicalPubs$studyType=="interventional")%>%
+    group_by(Disease, phase)%>%
+    summarise(nStudies=n())%>%
+    mutate(studyType="interventional")
+  
+  observational<-studyTypeOverview%>%
+    filter(studyType =="observational")%>%
+    mutate(phase="NA")
+  
+  studyOverview<-rbind(phaseOverview,observational)
+  studyOverview<-studyOverview[,c(1,4,2,3)]
+  return(studyOverview)
+}
+
+studySizeOverview<-function(){
+  studySize<-clinicalPubs%>%
+    group_by(Disease,studyType)%>%
+    summarise(nPatients=sum(nPatients))
+  
+  studySizePhase<-clinicalPubs%>%
+    filter(clinicalPubs$studyType=="interventional")%>%
+    group_by(Disease,phase)%>%
+    summarise(nPatients=sum(nPatients))%>%
+    mutate(studyType="interventional")
+  
+  observational<-studySize%>%
+    filter(studyType =="observational")%>%
+    mutate(phase="NA")
+  studySizeOverview<-rbind(studySizePhase, observational)
+  studySizeOverview<-studySizeOverview[,c(3,1,2)]
+  return(studySizeOverview)
+  
+}
+
+
+clinicalOverview<-left_join(studyTypeCount(),studySizeOverview())%>%as.data.frame()
+
+func <- function(z) if (is.numeric(z)) sum(z) else '' 
+sumrow <- as.data.frame(lapply(clinicalOverview, func))
+sumrow[1] <- "Total"
+clinicalOverview <- rbind(clinicalOverview, sumrow)
+
+
+colnames(clinicalOverview)<-c("Disease", "Study Type", "Phase", "Number of Studies", "Number of Patients")
+kbl(clinicalOverview) %>%
+  row_spec(0, bold=TRUE)%>%
+  row_spec((dim(clinicalOverview)-1)[1], hline_after = TRUE)%>%
+
+  row_spec(dim(clinicalOverview)[1], bold = T,
+           # background = "#ECECEC", 
+           hline_after = TRUE)%>%
+  collapse_rows(columns = 1)
+
+```
+
+
+
+
+## Clinical Publications
+
+
+```{r clinical publications}
+
+clinicalPubs1<-publicationList%>%
+  filter(Drug %in% params$x) %>%
+  select(
+    "StudyIdStr",
+    "Title",
+    "Disease",
+    "Year",
+    "efficacyScores",
+    "safteyScores",
+    "nPatients",
+    "qualityScore",
+    "distanceScore",
+    "PdfRelativePath"
+  )
+
+urls<-clinicalPubs1$PdfRelativePath
+
+#clinicalPubs1$Title<-substr(clinicalPubs1$Title, start=1, stop=50)
+
+
+
+
+clinicalPubs2<-clinicalPubs1%>%
+  select(
+    "Title",
+    "Disease",
+    "Year",
+    "efficacyScores",
+    "safteyScores",
+    "nPatients",
+    "qualityScore",
+    "distanceScore")
+
+clinicalPubs2$Title<-replace_non_ascii(clinicalPubs2$Title)
+
+colnames(clinicalPubs2)<-c("Title","Disease","Year","[E]","[S]","nParticipants","[Q]","Distance score")
+
+x<- kbl(clinicalPubs2, format="latex", digits=3, longtable=TRUE)%>%
+  column_spec( 1, link = urls, width="7cm")%>%
+  row_spec( 0, bold=TRUE)
+
+x
+#%>%
+#  column_spec(1, width = "7cm")
+
+
+
+```
+
+## Included ReLiSyR clinical publications for `r params$x` that have yet to be annotated
+
+```{r included clinical papers}
+
+
+includedNonAnnotatedClinicalStudyList <-clinicalStudyList%>%
+  filter(tolower(Drug) %in% tolower(params$x))%>%
+  filter(!idStr %in% clinicalPubs1$StudyIdStr)%>%
+    select(Title,
+         Author,
+         Year, 
+         Disease, 
+         Link
+         )
+
+includedNonAnnotatedClinicalStudyListLinks <- includedNonAnnotatedClinicalStudyList$Link
+
+if(nrow(includedNonAnnotatedClinicalStudyList)>0){
+kbl(includedNonAnnotatedClinicalStudyList[, 1:4], longtable = TRUE)%>%
+  column_spec(1, link = includedNonAnnotatedClinicalStudyListLinks, width = "8cm")%>%
+  column_spec(2:4, width = "2cm")
+} else print("No included studies for selected drug in ReLiSyR clinical review")
+
+```
+
+## Animal in vivo papers
+Publications for `r params$x` in Alzheimer's disease experimental models from the [Alzheimer's Disease Systematic Online Living Evidence Summary (AD-SOLES)]("https:/camarades.shinyapps.io/ad-soles")
+
+
+```{r animal in vivo papers}
+
+selecteddruganimalpubtable <- invivoStudies %>%
+  filter(tolower(intervention) %in% params$x) %>%
+  select(
+    title, 
+    author, 
+    journal,
+    year, 
+    doi
+  )%>%
+  mutate(author = str_trunc(author, 30))
+
+
+
+
+if(nrow(selecteddruganimalpubtable)>0){
+  
+
+selecteddruganimalpubtable <- selecteddruganimalpubtable%>%mutate(across(everything(), replace_non_ascii))
+selecteddruganimalpublinks <- paste0("https://doi.org/" , selecteddruganimalpubtable$doi)
+
+  kbl(selecteddruganimalpubtable, longtable = TRUE, row.names = FALSE)%>%
+    column_spec(1, link = selecteddruganimalpublinks, width = "5cm")%>%
+    column_spec(2:3, width = "2cm")%>%
+    column_spec(4, width = "1cm")%>%
+    column_spec(5, width = "4cm")
+  
+} else print("No animal in vivo studies identified for selected drug in AD-SOLES")
+    
+    
+  
+```
+
+
+## Clinical trial registry data
+
+Alzheimer disease or Alzheimer dementia studies from ClinicalTrials.gov for `r params$x`
+
+```{r AD clinicaltrials, message = FALSE, warning = FALSE}
+  
+ADClinicalTrials <- getADClinicalTrialsData(params$x)
+
+
+if(nrow(ADClinicalTrials)>0){
+  ADClinicalTrials <- ADClinicalTrials %>%
+    select(-studyType)%>%
+    mutate(overallStatus = str_replace_all(tolower(overallStatus), "_", " "))%>%
+    mutate(description = str_trunc(description, 500))%>%
+    rename(`intervention description` = description)
+  
+  ADClinicalTrialsLinks <- paste0("https://clinicaltrials.gov.uk/study/",ADClinicalTrials$nctId)
+  
+  kbl(ADClinicalTrials, longtable = TRUE, row.names = FALSE)%>%
+    column_spec(1, link = ADClinicalTrialsLinks, width = "2cm")%>%
+    column_spec(2, width = "3cm")%>%
+    column_spec(3, width = "1.7cm")%>%
+    column_spec(4, width = "2.5cm")%>%
+    column_spec(5, width = "1cm")%>%
+    column_spec(6, width = "4cm")
+  
+} else print("No AD studies identified for selected drug from ClinicalTrials.gov")
+
+```
+
+
+Studies for conditions (neurodegenerative diseases, vascular dementia, cerebral small vessel disease, stroke) from ClinicalTrials.gov for `r params$x`
+
+```{r other diseases clinicaltrials, message = FALSE, warning = FALSE}
+  
+OtherClinicalTrials <- getOtherNeuroClinicalTrialsData(params$x)
+
+
+if(nrow(OtherClinicalTrials)>0){
+  OtherClinicalTrials <- OtherClinicalTrials %>%
+    select(-studyType)%>%
+    mutate(overallStatus = str_replace_all(tolower(overallStatus), "_", " "))%>%
+    mutate(description = str_trunc(description, 500))%>%
+    rename(`intervention description` = description)
+  
+  OtherClinicalTrialsLinks <- paste0("https://clinicaltrials.gov.uk/study/",OtherClinicalTrials$nctId)
+  
+  kbl(OtherClinicalTrials, longtable = TRUE, row.names = FALSE)%>%
+    column_spec(1, link = OtherClinicalTrialsLinks, width = "2cm")%>%
+    column_spec(2, width = "3cm")%>%
+    column_spec(3, width = "1.7cm")%>%
+    column_spec(4, width = "2.5cm")%>%
+    column_spec(5, width = "1cm")%>%
+    column_spec(6, width = "4cm")
+  
+} else print("No studies identified for selected drug from ClinicalTrials.gov")
+
+```
+
+
+## ChEMBL database
+[ChEMBL](https://www.ebi.ac.uk/chembl/) is a manually curated database of bioactive molecules with drug-like properties by [EMBL's European Bioinformatics Institute](https://www.ebi.ac.uk/).
+
+```{r chembl data, warning = F, message = F, results = "asis"}
+
+drug <- params$x
+
+
+url <- paste0("https://www.ebi.ac.uk/chembl/api/data/molecule?pref_name__icontains=", drug)
+data <- read_html(url)
+molecules <- data %>%html_nodes("molecules")%>%html_children()
+
+for(n in 1:length(molecules)){
+  data<-molecules[n]
+  name <- data %>%html_nodes("pref_name")%>%html_text()
+  chemblIDs <- data %>%html_nodes("molecule_chembl_id")%>%html_text()%>%unique()
+  synonyms <- data %>%html_nodes("molecule_synonym")%>%html_text()%>%unique()%>%paste(collapse="; ")
+  # SMILES <- data %>% html_node("canonical_smiles")%>%html_text()  
+  mol_formula<-data%>%html_node("full_molformula")%>%html_text()
+  mol_weight<-data%>%html_node("full_mwt")%>%html_text()
+  mol_inchi<- data%>%html_node("standard_inchi")%>%html_text()
+  mol_type<-data%>%html_node("molecule_type")%>%html_text()
+  natural_product <- data %>%html_node("natural_product")%>%html_text()
+  natural_product <- ifelse(natural_product =="", FALSE, TRUE)
+  oral <- data %>%html_node("oral")%>%html_text()
+  oral <- ifelse(oral =="", FALSE, TRUE)
+  class <- data%>%html_node("usan_stem_definition")%>%html_text()
+  ro5Violations <- data%>%html_node("num_ro5_violations")%>%html_text()
+  ro5 <- ifelse(ro5Violations == "", TRUE, FALSE)
+  ro3_pass <- data %>%html_node("ro3_pass")%>%html_text()
+  ro3 <- ifelse(ro3_pass == "Y", TRUE, FALSE)
+  max_phase <- data %>% html_node("max_phase")%>%html_text()
+  availability_type <- data %>%html_node("availability_type")%>%html_text()
+  availability_valid_type<-c(0,1,2)
+  type<-pmatch(availability_type, availability_valid_type)
+  availability <- switch(type, 
+                         availability = "discontinued",
+                         availability = "prescription only",
+                         availability = "over the counter"
+  )
+  
+  
+  outputi<- paste0("<h4>", name, "</h4>",
+                   "<p>ChemBLID: ", chemblIDs, 
+                   "</p><p>Synonyms: ", synonyms,
+                   # "</p><p>SMILES: ", SMILES,
+                   "</p><p>Molecule type: ", mol_type,
+                   "</p><p>Molecule class: ", class,
+                   "</p><p>Molecular formula: ", mol_formula,
+                   "</p><p>Molecular weight: ", mol_weight,
+                   "</p><p>Natural product: ", natural_product,
+                   "</p><p>Oral formulation: ", oral, 
+                   "</p><p>Rule of 5 met: ", ro5,
+                   "</p><p>Rule of 3 met: ", ro3,
+                   "</p><p>Max Clinical Trial Phase: ", max_phase,
+                   "</p><p>Availability type: ", availability,
+                   "</p><p></p><p></p>"
+  )
+  
+  if(!exists("combinedOutput")) combinedOutput <- outputi else combinedOutput <- c(combinedOutput, outputi)
+  
+}
+combinedOutput
+
+
+```
+

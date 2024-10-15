@@ -32,10 +32,8 @@ library(textclean)
 library(tinytex)
 library(jsonlite)
 
-# devtools::install_github("shihikoo/rsyrf", auth_token = devtools::github_pat())
 
 source('configure.R')
 
 drugList <- googlesheets4::read_sheet(googleSheetId, sheet = "drugList") 
-# BNFnames <-googlesheets4::read_sheet(googleSheetId, sheet = "BNFnames")
 

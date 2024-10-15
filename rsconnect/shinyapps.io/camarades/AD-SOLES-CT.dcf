@@ -5,9 +5,9 @@ account: camarades
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13004018
-bundleId: 9222392
+bundleId: 9225436
 url: https://camarades.shinyapps.io/AD-SOLES-CT/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: getClinicalTrialsData.R|LICENSE|tintPdf-template.tex
+ignoredFiles: drugCV.aux|drugCV.log|drugCV.out|drugCV.pdf

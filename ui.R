@@ -223,7 +223,7 @@ body <- dashboardBody(
       h1("Drug CV"), 
       fluidPage(
         selectInput("drug", "Select Drug", drugList, multiple=FALSE),
-        # downloadButton("drugCV", label="Download Drug CV pdf"),
+        downloadButton("drugCV", label="Download Drug CV pdf"),
         
         tabsetPanel(type="tabs",
                     tabPanel("Overview",

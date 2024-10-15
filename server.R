@@ -55,8 +55,7 @@ shinyServer(function(input, output, session) {
   
   invivoStudies<- reactive({RMySQL::dbReadTable(con, "ad_invivo_citations")})
   
-  BNFnames <- read_sheet(googleSheetId, "BNFnames")
-  
+
   ########drugtable-------------------------------------
   drugRankList <-  reactive({
     mydf <- drugSummary() %>%
