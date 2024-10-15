@@ -10,21 +10,15 @@ dashboardSidebar <- dashboardSidebar(sidebarMenu(
     tabName = "progress",
     icon = icon("chart-pie"),
     menuSubItem("Clinical review", tabName = "clinical")
-    # menuSubItem("Animal In vivo review", tabName = "invivo")
-    #,
-    #menuSubItem("In vitro review", tabName = "invitro")
+
   ),
   menuItem("Drug CVs", 
            tabName = "drugCV", 
            icon = icon("tablets")),
-  # menuItem("Contributors",
-  #          tabName="contributors",
-  #          icon = icon("users")),
   menuItem("About", tabName = "about", icon = icon("info"))
 ))
 
 body <- dashboardBody(
-  # h2("DISCLAIMER: THIS IS A DEMO VERSION"),
   tabItems(
     # liveDR---------
     tabItem(tabName = "liveDR",
@@ -36,8 +30,7 @@ body <- dashboardBody(
                 
                 tags$li(tags$a(href = "https://camarades.shinyapps.io/ReLiSyR-MND","Repurposing Living Systematic Review (ReLiSyR)"), "clinical review: a machine learning assisted living systematic review of Clinical literature of AD and other neurodegenerative diseases which may share common pivotal pathways, namely, motor neuron disease (MND), Frontotemporal dementia (FTD), Huntington's disease (HD), Multiple Sclerosis (MS) and Parkinson's disease (PD)."),
                 tags$li(tags$a(href = "https://camarades.shinyapps.io/AD-SOLES", "AD-SOLES"), ", Systematic Online Living Evidence Summary of Experimental Alzheimer's Disease research, (", tags$a(href = "https://doi.org/10.1016/j.jneumeth.2024.110209", "doi.org/10.1016/j.jneumeth.2024.110209"), ")."),
-                #tags$li("Experimental drug screening"),
-                #tags$li("Pathway and network analysis"),
+                
                 tags$li("Mining of drug and trial databases, such as", tags$a(href = "https://www.ebi.ac.uk/chembl/", "ChEMBL database"), "and"
                         , tags$a(href = "https://www.clinicaltrials.gov/", "clinicaltrials.gov"), "."),
                 p("More information on our methodology can be found under the About tab.")
@@ -73,149 +66,6 @@ body <- dashboardBody(
         )
       )
     ),
-    
-    # # invivo progress------------------------------------- 
-    # tabItem(tabName = "invivo",
-    #         h1("In vivo review"),
-    #         h4(textOutput("InvivoProgressDateTitle" )),
-    #         fluidRow(
-    #           tabBox(
-    #             side = "left", height = 1000, width = 12,
-    #             selected = "PRISMA Diagram",
-    #             tabPanel("PRISMA Diagram", 
-    #                      fluidRow(
-    #                        infoBoxOutput("InvivoUniquePubsBox"),
-    #                        infoBoxOutput("InvivoIncludedPubsBox"),
-    #                        infoBoxOutput("InvivoCorePubsBox")),
-    #                      fluidRow(
-    #                        infoBoxOutput("InvivoSingleAnnotBox"),
-    #                        infoBoxOutput("InvivoDualAnnotBox"),
-    #                        infoBoxOutput("InvivoReconciledBox")),
-    #                      
-    #                      fluidRow(
-    #                        box(
-    #                          title = "1. Living search",
-    #                          solidHeader = TRUE,
-    #                          status = "danger",
-    #                          textOutput("InvivoLivingSearch"),
-    #                          width = NULL
-    #                        ),
-    #                        
-    #                        box(
-    #                          title = "2. Citation screening",
-    #                          solidHeader = TRUE,
-    #                          status = "warning", htmlOutput("InvivoCitationScreening"),
-    #                          width = NULL
-    #                        ),
-    #                        box(
-    #                          title = "3. Filtering drugs of interest based on inclusion logic",
-    #                          solidHeader = TRUE,
-    #                          status = "info", htmlOutput("InvivoFilteringDrugs"),
-    #                          width = NULL
-    #                        ),
-    #                        
-    #                        box(
-    #                          title = "4. Longlisting by clinical trial investigators",
-    #                          solidHeader = TRUE,
-    #                          status = "primary", textOutput("InvivoLongList"),
-    #                          width = NULL
-    #                        ),
-    #                        
-    #                        box(
-    #                          title = "5. Data extraction",
-    #                          solidHeader = TRUE,
-    #                          status = "success", textOutput("InvivoDataExtraction"),
-    #                          width = NULL
-    #                        ))
-    #             ),
-    #             
-    #             tabPanel("Study characteristics",
-    #                      fluidRow(
-    #                        column(width =6,
-    #                               box(title = "Studies by drug tested",
-    #                                   DT::dataTableOutput("invivoDrugSummaryTable")  %>% withSpinner(color="#0dc5c1"), width = NULL)),
-    #                        column(width = 6,
-    #                               box(title = "Studies by animal models used",
-    #                                   p("This interactive sunburst chart displays all reconciled papers according to disease model used categorised by animal, mode of induction (genetic/pharmacological), protein or gene targeted (if specified), and SOD1 copy number (for SOD1 G93A mice). Hover over each chunk to see how many records fit each category. Select a category to expand and view subcategories in more details. Click the centre of chart to return to the previous level."),
-    #                                   plotlyOutput("invivoModelSB", height="100%", width="100%")  %>% withSpinner(color="#0dc5c1"), width = NULL)
-    #                        ))),
-    #             
-    #             tabPanel("Risk of Bias",
-    #                      fluidRow(
-    #                        tabBox(side = "left", 
-    #                               width = 12,
-    #                               selected = "Overview", 
-    #                               tabPanel("Overview", h3("Risk of bias overview for reconciled experiments"),
-    #                                        textOutput("invivoExperimentCountText"),
-    #                                        plotlyOutput("invivoRobPlot", width = "100%")%>%
-    #                                          withSpinner(color = "#0dc5c1")),
-    #                               tabPanel("Table", 
-    #                                        tags$head(tags$style(HTML('#faith table {border-collapse:collapse; } 
-    #                          #faith table th {
-    #                            height: 100px;
-    #                            transform: 
-    #                              translate(10px, -5px)
-    #                              rotate(315deg);
-    #                          }'))),
-    #                                        tags$style(".yes {color:#2dc937}
-    #                                        .no {color:#cc3232}
-    #                                        .nc {color:#ffbf00}"),
-    #                                        
-    #                                        DT::dataTableOutput("invivoRobExperimentTable")%>%
-    #                                          withSpinner(color = "#0dc5c1"))
-    #                               
-    #                               
-    #                        )))
-    #             
-    #             
-    #             
-    #           )))
-    # ,
-    
-    
-    # # invitro progress-------------------------------------
-    # tabItem(tabName = "invitro",
-    #         h1("In vitro review"),
-    #         h4(textOutput("InvitroProgressDateTitle" )),
-    #         
-    #         fluidPage(
-    #           infoBoxOutput("InvitroUniquePubsBox"),
-    #           infoBoxOutput("InvitroIncludedPubsBox"),
-    #           infoBoxOutput("InvitroCorePubsBox"),
-    #           infoBoxOutput("InvitroSingleAnnotBox"),
-    #           infoBoxOutput("InvitroDualAnnotBox"),
-    #           infoBoxOutput("InvitroReconciledBox"),
-    #           box(
-    #             title = "1. Living search",
-    #             solidHeader = TRUE,
-    #             status = "danger", textOutput("InvitroLivingSearch")
-    #           ),
-    #           
-    #           box(
-    #             title = "2. Citation screening",
-    #             solidHeader = TRUE,
-    #             status = "warning",htmlOutput("InvitroCitationScreening")
-    #           ),
-    #           
-    #           box(
-    #             title = "3. Filtering drugs of interest based on inclusion logic",
-    #             solidHeader = TRUE,
-    #             status = "info",htmlOutput("InvitroFilteringDrugs")
-    #           ),
-    #           
-    #           box(
-    #             title = "4. Longlisting by clinical trial investigators",
-    #             solidHeader = TRUE,
-    #             status = "primary",textOutput("InvitroLongList")
-    #           ),
-    #           
-    #           box(
-    #             title = "5. Data extraction",
-    #             solidHeader = TRUE,
-    #             status = "success",textOutput("InvitroDataExtraction")
-    #           )
-    #         )
-    # ),
     
     # drugCVtab-------------------------------------
     tabItem(
@@ -288,45 +138,12 @@ body <- dashboardBody(
                              )),
                              
                              
-                             
-                    
-                    # tabPanel("in vitro Summary",
-                    #          fluidRow(
-                    #            box(width=12, height = 500, h4("Forest Plot"),status = "success"),
-                    #            box(width=12,status = "info", 
-                    #                h4("Publications for selected drug"),
-                    #                DT::dataTableOutput("druginvitropublications") %>% withSpinner(color="#0dc5c1")
-                    #            )
-                    #          )),
-                    # tabPanel("Pathway Analysis",
-                    #          
-                    #          fluidRow(
-                    #            box(width = 12, height = 700,
-                    #                h4("Network Analysis"), status = "success",
-                    #                selectInput("networkImage","Network analysis", choices = c("Tc", "druggability", "brainprotein", "ADevidence")),
-                    #                uiOutput("noPathwayAnalysis"),
-                    #                imageOutput("networkImage")
-                    #            )),
-                    #          
-                    #          
-                    #          
-                    #          
-                    #          fluidRow(
-                    #            box(width =12, status = "info",
-                    #                h4("String Enrichment Analysis"),
-                    #                uiOutput("noStringAnalysis"),
-                    #                DT::dataTableOutput("stringAnalysis") 
-                    #                %>% withSpinner(color="#0dc5c1")
-                    #                
-                    #            )
-                    #          )
-                    #          
-                    # ),
+              
                     
                     tabPanel("ClinicalTrials.gov",
                              fluidRow(
                                box(width=12, status = "info",
-                                   h4("Clinical Trials in Alzheimer's disease, cerebral small vessel disease, neurodegenerative diseases and stroke listed on clinicaltrials.gov for selected drug"),
+                                   h4("Clinical Trials in Alzheimer disease, Alzheimer dementia, vascular dementia, cerebral small vessel disease, neurodegenerative diseases and stroke listed on clinicaltrials.gov for selected drug"),
                                    uiOutput("noclinicaltrialsdata"),
                                    DT::dataTableOutput("clinicaltrialsdata")%>%withSpinner(color = "#0dc5c1")
                                )
@@ -348,62 +165,7 @@ body <- dashboardBody(
                     
         ))
     ),
-    #---- quickdownload tab ----
-    # tabItem(
-    #   tabName="download",
-    #   fluidRow(
-    #     box(title="Download all fully categorised references", status="success", width=4,
-    #         p("Download data from our dataset of fully categorised papers only (annotated by at least 2 reviewers)"),
-    #         downloadBttn("catclinicalpubs", "Download categorised clinical references", color = "default"),
-    #         downloadBttn("catinvivopubs", "Download categorised in vivo references", color = "default"),
-    #         downloadBttn("catinvitropubs", "Download categorised in vitro references", color = "default")),
-    #     
-    #     box(title= "Download all unique included references", status="primary", width=4,
-    #         downloadBttn("allclinicalpubs",
-    #                      label= "Download all clinical references", color = "success"),
-    #         downloadBttn("allinvivopubs",
-    #                      label="Download all in vivo references", color = "success"),
-    #         downloadBttn("allinvitropubs", "Download all in vitro references", color = "success"))
-    #   )
-    # ),
-    
-    # ---- contributor tab------------------------------
-    # tabItem(
-    #   tabName="contributors",
-    #   fluidPage(
-    #     fluidRow(
-    #       box(width=12,status = "primary",
-    #           h3("Reviewers"),
-    #           p("The ReLiSyR project includes a crowd-sourcing element to the systematic reviews. We have an expanding group of reviewers who have contributed in various stages of this project including screening and annotation. In the current stage of the project, we are extracting data for our clinical and animal in vivo reviews."))),
-    #     h3("Data extraction leaderboards"),
-    #     fluidRow(
-    #       column(width=12,height=1010,
-    #              box(width=4,status = "danger", height=800,
-    #                  title="Reward Scheme Leaderboard",
-    #                  p("Between 02 June 2021 and 30 July 2021, we are running a reward scheme to thank our reviewers. We will be offering reviewers rewards as follows based on the number of papers reviewed during this period."),
-    #                  p(strong("10 papers: £20 voucher")
-    #                  ),
-    #                  p(strong("50 papers: £100 voucher")),
-    #                  p(strong("100 papers: £250 voucher")),
-    #                  DT::dataTableOutput('rewardleaderboard') %>% withSpinner(color="#0dc5c1")),
-    #              box(width=4,status = "warning", height=800,
-    #                  title="Monthly leaderboard",
-    #                  p("Our top reviewers for the month of", month(Sys.time(), label=TRUE, abbr = FALSE), " ", year(Sys.time())),
-    #                  DT::dataTableOutput('monthleaderboard') %>% withSpinner(color="#0dc5c1")),
-    #              # )
-    #              box(width=4, status = "success", height=800,
-    #                  title="All-time Leaderboard",
-    #                  DT::dataTableOutput('alltimeleaderboard') %>% withSpinner(color="#0dc5c1"))
-    #       ))
-    #     ,
-    #     fluidRow(
-    #       box(width=12,status = "primary",
-    #           p("All registered reviewers past and present are listed here."),
-    #           p(strong("Clinical Reviewers:"), textOutput("clinicalReviewers")),
-    #           p(strong("Preclinical Reviewers:"), textOutput("preclinicalReviewers"))
-    #       )))
-    # ),
-    
+   
     # ---- about tab-------------------------------------
     tabItem(
       tabName = "about",
@@ -422,10 +184,7 @@ body <- dashboardBody(
                      tags$li("Repurposing Living Systematic Review (ReLiSyR) clinical review: a machine learning assisted living systematic review of: Clinical literature of MND and other neurodegenerative diseases which may share common pivotal pathways, namely, motor neuron disease (MND), Frontotemporal dementia (FTD), Huntington's disease (HD), Multiple Sclerosis (MS) and Parkinson's disease (PD)."),
                      tags$li("AD-SOLES (AD-Systematic Online Living Evidence Summary) for animal in vivo literature of AD models.")
                      
-                   )
-                 ,
-                 # tags$li("Experimental drug screening"),
-                 # tags$li("Pathway and network analysis"),
+                   ),
                  tags$li("Mining of drug and trial databases, such as", tags$a(href = "https://www.ebi.ac.uk/chembl/", "ChEMBL database"), "and"
                          , tags$a(href = "https://www.clinicaltrials.gov/", "clinicaltrials.gov"), ".")
                ),
@@ -458,7 +217,6 @@ body <- dashboardBody(
                      ": We will analyse the results as follows:",
                      tags$ul(
                        tags$li("Clinical review:","For each publication, we calculated a",
-                               # includeHTML("Drug-Scoring-Method.html"),
                                tags$a(href = "https://mfr.de-1.osf.io/render?url=https://osf.io/8k4h2/?direct%26mode=render%26action=download%26mode=render", "distance score"),
                                "based on Euclidean distance of efficacy and safety scores weighted by quality and study size. For each drug, we calculate a drug score using the number of publications describing the drug (n) and median publication distance score for all publications describing data for that drug:", withMathJax("$$\\text{drug score}\\ = log10{(n+1)} \\times {(\\text{median distance score})}$$"),
                                

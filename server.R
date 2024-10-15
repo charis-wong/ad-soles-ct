@@ -4,18 +4,14 @@ shinyServer(function(input, output, session) {
   ))
   
   #live drug recommendations-------------------------------------
-  # ---- reactive ----
-  
-  
+
   drugSummary <- reactive({     
     drugSummary <- googlesheets4::read_sheet(googleSheetId, sheet = "drugSummary")
     drugSummary
   })
-  # drugSummary <- reactive({ googlesheets4::read_sheet(googleSheetId, sheet = "DrugSummaryReconciled")    })
-  
+
   publicationList <- reactive({ googlesheets4::read_sheet(googleSheetId, sheet = "publicationList")  })
-  # publicationList <-reactive({googlesheets4::read_sheet(googleSheetId, sheet = "PublicationListReconciled")  })
-  
+
   progressSummary <-reactive({googlesheets4::read_sheet(googleSheetId, sheet = "progressSummary")  })
   
   clinicalFTInclusionSummary <-reactive({googlesheets4::read_sheet(googleSheetId, sheet = "clinicalFTInclusionSummary")  })
@@ -50,8 +46,7 @@ shinyServer(function(input, output, session) {
   }
   
   clinicalStatistics <- reactive({    createStatistics(1)  })
-  # output$drugList <- render({sort(publicationList()$Drug)})
-  
+
   
   invivoStudies<- reactive({RMySQL::dbReadTable(con, "ad_invivo_citations")})
   
@@ -79,11 +74,6 @@ shinyServer(function(input, output, session) {
     mydf[,cols] <- round(mydf[,cols], 2)
     return(mydf)
   })
-  
-  #distancescore<-withMathJax("$$\\text{distance score}\\ = \\sqrt{E^2+S^2+SS^2+Q^2}$$")
-  #  distancescore<-withMathJax("$$\\text{distance score} = \\sqrt {w^2(|\\overrightarrow{E}(E)^2 + S^2|)} \\times \\overrightarrow{d}$$")
-  
-  
   
   
   output$livedrugranklist <- DT::renderDataTable(DT::datatable(
@@ -881,243 +871,19 @@ shinyServer(function(input, output, session) {
       file <- paste(input$drug, "_drugCV", Sys.Date(),".pdf", sep="")
     },
     content= function(file){
-      #   tempReport <- file.path(tempdir(), "drugCV.Rmd")
-      
-      #    file.copy("drugScores2017.csv", tempdir())
-      #    file.copy("drugCV.Rmd", tempdir())
-      
       params <- list(x=input$drug)
       
       rmarkdown::render("drugCV.Rmd", output_file=file, params=params, envir= new.env(parent=globalenv()))
     }
   )
   
-  #####pathway analysis --------------
-  # 
-  #   
-  #   output$networkImage<-renderImage({
-  #     req(input$drug)
-  #     x<-if(input$drug == "aripriprazole")
-  #     {"aripiprazole"} else {input$drug}
-  #     x<-ifelse(x == "sodium phenylbutyrate", "Phenylbutyric acid", ifelse(x == "isoprinosine/inosiplex", "Inosine pranobex", str_to_title(x)))
-  #     tmpfile<-paste0("s3://relisyrpathwayanalysis/output/", x, input$networkImage, ".png")
-  #     
-  # 
-  #       if(object_exists(tmpfile)){
-  #       tmpfile<- tmpfile%>%
-  #         get_object()%>%
-  #       image_read()%>%
-  #       image_write(tempfile(fileext=".png"), format ="png")
-  #       }else{tmpfile<-"s3://relisyrpathwayanalysis/output/blank.png"
-  #       tmpfile<- tmpfile%>%
-  #         get_object()%>%
-  #         image_read()%>%
-  #         image_write(tempfile(fileext=".png"), format ="png")
-  #       }
-  #     list(src = tmpfile, 
-  #          contentType = "image/png")
-  # 
-  #   
-  #   },
-  #   deleteFile = TRUE)
-  #   
-  #   
-  # 
-  #   stringData<-reactive({
-  #     
-  #     x<-if(input$drug == "aripriprazole")
-  #     {"aripiprazole"} else {input$drug}
-  #     
-  #     x<-ifelse(x == "sodium phenylbutyrate", "Phenylbutyric acid", ifelse(x == "isoprinosine/inosiplex", "Inosine pranobex", str_to_title(x)))
-  #     
-  #     fileName <-paste0("s3://relisyrpathwayanalysis/output/", x, "_string-enrichment-all.csv")
-  #     if(object_exists(fileName)){
-  #       objectName<-  paste0("output/", x, "_string-enrichment-all.csv")
-  #       
-  #       stringData<- s3read_using(FUN = read.csv, bucket = "relisyrpathwayanalysis", object = objectName)
-  #       
-  #       colnames(stringData)<- c("n_backgroundGenes",
-  #                                "n_genes",
-  #                                "category",
-  #                                "chartcolor",
-  #                                "description",
-  #                                "FDR_value",
-  #                                "genes",
-  #                                "network.SUID",
-  #                                "nodes.SUID",
-  #                                "p_Value",
-  #                                "PMID",
-  #                                "termName",
-  #                                "transferred_FDR_value",
-  #                                "year")
-  #       
-  #       stringData<-stringData%>%
-  #         select("n_backgroundGenes",
-  #                "n_genes",
-  #                "category",
-  #                "description",
-  #                "FDR_value",
-  #                "genes",
-  #                "network.SUID",
-  #                "nodes.SUID",
-  #                "p_Value",
-  #                "termName",
-  #                "transferred_FDR_value")
-  #     } else {stringData <- NULL}
-  #     return(stringData)
-  #     
-  #   })
-  #   
-  #   
-  #   output$stringAnalysis <-
-  #     DT::renderDataTable(DT::datatable(
-  #       stringData(), 
-  #       rownames = FALSE,
-  #       filter="top", options = list(pageLength = 10, 
-  #                                    lengthMenu = list(c(10, 25, 50, 100,-1), c("10", "25", "50", "100", "All" )),
-  #                                    dom = 'Bflrtip', buttons = c('copy', 'csv', 'excel', 'pdf', 'print')), extensions = c('Buttons','Responsive')
-  #     ))
-  # 
-  #   
-  #   output$noPathwayAnalysis<- renderUI({
-  #     if(is.null(stringData())){
-  #       h5("No human targets with p<0.05 and maxTc>0.4 identified for selected drug on SEA search.")
-  #     }
-  #   })
-  #   
-  #   output$noStringAnalysis<- renderUI({
-  #     if(is.null(stringData())){
-  #       h5("No human targets with p<0.05 and maxTc>0.4 identified for selected drug on SEA search.")
-  #     }
-  #   })
-  #   
-
-  
-  
-  #####downloadinvitropubs-------------------------------
-  # output$downloadinvitroDrugPublications <- downloadHandler(
-  #   filename = function() {
-  #     file <- paste("invitropublications", Sys.Date(), ".csv", sep = "")
-  #   },
-  #   content = function(file) {
-  #     write.csv(
-  #       selecteddruginvitropublications(),
-  #       file = file,
-  #       quote = T,
-  #       row.names = F,
-  #       na = ""
-  #     )
-  #   }
-  # )
-  
-  #download---------------------------------------------
-  # output$catclinicalpubs <- downloadHandler(
-  #   filename=function() {
-  #     file<-paste("cat_clinicalpubs", Sys.Date(), ".csv", sep="")},
-  #   content=function(file){
-  #     write.csv(
-  #       as.data.frame(publicationList()),
-  #       file=file, 
-  #       quote=T,
-  #       row.names=F,
-  #       na="")})
-  # 
-  # output$catinvivopubs <- downloadHandler(
-  #   filename=function(){
-  #     file<-paste("cat_invivopubs", Sys.Date(), ".csv", sep="")},
-  #   content=function(file){
-  #     write.csv(
-  #       invivoPublicationList(),
-  #       file=file, 
-  #       quote=T,
-  #       row.names=F,
-  #       na="")})
-  # 
-  # output$catinvitropubs <- downloadHandler(
-  #   filename=function(){
-  #     file<-paste("cat_invitropubs", Sys.Date(), ".csv", sep="")},
-  #   content=function(file){
-  #     write.csv(
-  #       invitroPublicationList(),
-  #       file=file, 
-  #       quote=T,
-  #       row.names=F,
-  #       na="")})
-  
-  # stringData<-reactive({
-  #   
-  #   x<-if(input$drug == "aripriprazole")
-  #   {"aripiprazole"} else {input$drug}
-  #   
-  #   x<-ifelse(x == "sodium phenylbutyrate", "Phenylbutyric acid", ifelse(x == "isoprinosine/inosiplex", "Inosine pranobex", str_to_title(x)))
-  #   
-  #   fileName <-paste0("s3://relisyrpathwayanalysis/output/", x, "_string-enrichment-all.csv")
-  #   if(object_exists(fileName)){
-  #   objectName<-  paste0("output/", x, "_string-enrichment-all.csv")
-  #   
-  #   stringData<- s3read_using(FUN = read.csv, bucket = "relisyrpathwayanalysis", object = objectName)
-  #   
-  #   colnames(stringData)<- c("n_backgroundGenes",
-  #                            "n_genes",
-  #                            "category",
-  #                            "chartcolor",
-  #                            "description",
-  #                            "FDR_value",
-  #                            "genes",
-  #                            "network.SUID",
-  #                            "nodes.SUID",
-  #                            "p_Value",
-  #                            "PMID",
-  #                            "termName",
-  #                            "transferred_FDR_value",
-  #                            "year")
-  #   
-  #   stringData<-stringData%>%
-  #     select("n_backgroundGenes",
-  #            "n_genes",
-  #            "category",
-  #            "description",
-  #            "FDR_value",
-  #            "genes",
-  #            "network.SUID",
-  #            "nodes.SUID",
-  #            "p_Value",
-  #            "termName",
-  #            "transferred_FDR_value")
-  #   } else {stringData <- NULL}
-  #   return(stringData)
-  # 
-  # })
-  # 
-  # 
-  # output$stringAnalysis <-
-  #   DT::renderDataTable(DT::datatable(
-  #     stringData(), 
-  #     rownames = FALSE,
-  #     filter="top", options = list(pageLength = 10, 
-  #                                  lengthMenu = list(c(10, 25, 50, 100,-1), c("10", "25", "50", "100", "All" )),
-  #                                  dom = 'Bflrtip', buttons = c('copy', 'csv', 'excel', 'pdf', 'print')), extensions = c('Buttons','Responsive')
-  #   ))
-  # 
-  # output$noPathwayAnalysis<- renderUI({
-  #   if(is.null(stringData())){
-  #     h5("No human targets with p<0.05 and maxTc>0.4 identified for selected drug on SEA search.")
-  #   }
-  # })
-  # 
-  # output$noStringAnalysis<- renderUI({
-  #   if(is.null(stringData())){
-  #     h5("No human targets with p<0.05 and maxTc>0.4 identified for selected drug on SEA search.")
-  #   }
-  # })
-  # 
    #####clinical trial registry--------------------------------
   # 
   
   clinicaltrials<-reactive({
     drug <- str_replace(input$drug, "\\s", "+")
     
-    url1<- paste0("https://clinicaltrials.gov/api/v2/studies?query.cond=%28alzheimer+dementia%29+OR+%28alzheimer+disease%29+OR+%28cerebral+small+vessel+disease%29+OR+%28neurodegenerative+disease%29+OR+%28stroke%29&query.intr=", 
+    url1<- paste0("https://clinicaltrials.gov/api/v2/studies?query.cond=%28alzheimer+dementia%29+OR+%28alzheimer+disease%29+OR+%28vascular+dementia%29+OR+%28cerebral+small+vessel+disease%29+OR+%28neurodegenerative+disease%29+OR+%28stroke%29&query.intr=", 
                   drug, 
                   "&fields=NCTId%7CBriefTitle%7CCondition%7CInterventionName%7CInterventionDescription%7CStudyType%7CPhase%7COverallStatus",
                   "&countTotal=true&pageSize=1000") 
@@ -1150,74 +916,13 @@ shinyServer(function(input, output, session) {
     results <- left_join(results, interventionDescription, by = "row")%>%
       select(-row, -interventions)
     
+    results <- results%>%
+      rename(`intervention description` = description)
+    
     return(results)
     
   })
   
-  # clinicaltrials<-reactive({
-  #   
-  #   x<-if(input$drug == "aripriprazole")
-  #   {"aripiprazole"} else {input$drug}
-  #   drug<-str_replace(x, "\\s", "+")
-  #   drug <-str_replace(drug, "/", "+OR+")
-  #   url1 <- paste0("https://ClinicalTrials.gov/api/query/study_fields?expr=%28", drug, "%29+AND+%28amyotrophic+lateral+sclerosis+OR+motor+neuron+disease%29&fields=NCTId,OverallStatus,StudyType,Condition,BriefTitle,InterventionName&min_rnk=1&max_rnk=1000" )
-  #   
-  #   xmldata<-GET(url1)
-  #   
-  #   if (xmldata$status_code !=200) { return(NULL) }
-  #   else{
-  #     x<-as_list(read_xml(xmldata))
-  #     
-  #     xml_df = tibble::as_tibble(x) %>%unnest_longer(StudyFieldsResponse)
-  #     
-  #     StudyFields <- xml_df%>%dplyr::filter(StudyFieldsResponse_id == "StudyFields")%>%unnest_wider(StudyFieldsResponse)
-  #     
-  #     if(nrow(StudyFields) == 0){return(NULL)}
-  #     else{
-  #       
-  #       StudyFields <- StudyFields%>%
-  #         unnest(cols = 6 )
-  #       
-  #       StudyFields1 <-StudyFields %>%
-  #         unnest(cols = names(.))
-  #       
-  #       StudyFields2 <- StudyFields1 %>%
-  #         unnest(cols = names(.))%>%
-  #         readr::type_convert()%>%
-  #         select(-StudyFieldsResponse_id)
-  #       
-  #       Fields <-xml_df%>%dplyr::filter(StudyFieldsResponse_id == "Field")%>%unnest_wider(StudyFieldsResponse)
-  #       colnames(StudyFields2) <- unlist(Fields[,1])
-  #       
-  #       table<-StudyFields2%>%
-  #         group_by(NCTId, OverallStatus, BriefTitle)
-  #       
-  #       if ("InterventionName" %in% names(table)){
-  #         table <- table%>%
-  #           summarise(StudyType = paste(unique(StudyType), collapse = "; "),
-  #                     Condition = paste(unique(Condition), collapse = "; "),
-  #                     InterventionName = ifelse(!is.null(InterventionName), paste(unique(InterventionName), collapse = "; "), NA))
-  #         colnames(table)<-c("Registration Number",
-  #                            "Status",
-  #                            "Title",
-  #                            "Study Type",
-  #                            "Condition",
-  #                            "Intervention Name")
-  #       } else {
-  #         table <- table%>%
-  #           summarise(StudyType = paste(unique(StudyType), collapse = "; "),
-  #                     Condition = paste(unique(Condition), collapse = "; "))
-  #         colnames(table)<-c("Registration Number",
-  #                            "Status",
-  #                            "Title",
-  #                            "Study Type",
-  #                            "Condition")
-  #       }
-  #       return(table)
-  #     }}
-  # })
-  # 
-  # 
   output$clinicaltrialsdata<-
     DT::renderDataTable(
       DT::datatable(
@@ -1328,144 +1033,5 @@ shinyServer(function(input, output, session) {
  
   
   output$chemblInfo <- renderText(chemblData())
-  
-  
-  
-  #####downloadinvitropubs-------------------------------
-  # output$downloadinvitroDrugPublications <- downloadHandler(
-  #   filename = function() {
-  #     file <- paste("invitropublications", Sys.Date(), ".csv", sep = "")
-  #   },
-  #   content = function(file) {
-  #     write.csv(
-  #       selecteddruginvitropublications(),
-  #       file = file,
-  #       quote = T,
-  #       row.names = F,
-  #       na = ""
-  #     )
-  #   }
-  # )
-  
-  #download---------------------------------------------
-  # output$catclinicalpubs <- downloadHandler(
-  #   filename=function() {
-  #     file<-paste("cat_clinicalpubs", Sys.Date(), ".csv", sep="")},
-  #   content=function(file){
-  #     write.csv(
-  #       as.data.frame(publicationList()),
-  #       file=file, 
-  #       quote=T,
-  #       row.names=F,
-  #       na="")})
-  # 
-  # output$catinvivopubs <- downloadHandler(
-  #   filename=function(){
-  #     file<-paste("cat_invivopubs", Sys.Date(), ".csv", sep="")},
-  #   content=function(file){
-  #     write.csv(
-  #       invivoPublicationList(),
-  #       file=file, 
-  #       quote=T,
-  #       row.names=F,
-  #       na="")})
-  # 
-  # output$catinvitropubs <- downloadHandler(
-  #   filename=function(){
-  #     file<-paste("cat_invitropubs", Sys.Date(), ".csv", sep="")},
-  #   content=function(file){
-  #     write.csv(
-  #       invitroPublicationList(),
-  #       file=file, 
-  #       quote=T,
-  #       row.names=F,
-  #       na="")})
-  
-  #####download all publications-----------------------
-  #output$allclinicalpubs
-  #output$allinvivopubs
-  #output$allinvitropubs
-  
-  #contributors-------------
-  # alltimereviews<-reactive({
-  #   alltimereviews <- reviewerSession() %>%
-  #     dplyr::group_by(InvestigatorIdStr, Name) %>%
-  #     dplyr::summarise(AllTimeReviews = n(),.groups="drop")%>%
-  #     dplyr::arrange(desc(AllTimeReviews)) %>%
-  #     rename(Reviewer = Name)
-  #   return(alltimereviews[,c("Reviewer", "AllTimeReviews")])
-  # })
-  # 
-  # rewardreviews<-reactive({
-  #   reviewerRewardSettings <- data.table::first(reviewerRewardSettings()[reviewerRewardSettings()$current == "Yes",])
-  #   rewardreviews <- reviewerSession() %>%
-  #     dplyr::filter(DateTimeCreated > as.POSIXct(reviewerRewardSettings$StartTime) & DateTimeCreated < as.POSIXct(reviewerRewardSettings$EndTime) & !StageIdStr %in% reviewerRewardSettings$excludeStage &  !InvestigatorIdStr %in% strsplit(reviewerRewardSettings$excludIdStr, ";")[[1]] ) %>%
-  #     dplyr::group_by(InvestigatorIdStr,  Name) %>%
-  #     dplyr::summarise(RewardReviews = n(),.groups="drop") %>%
-  #     dplyr::arrange(desc(RewardReviews)) %>%
-  #     dplyr::rename(Reviewer = Name) %>%
-  #     dplyr::mutate(Reviewer = ifelse(RewardReviews>=200, paste(Reviewer,"<img src=", "'", "goldmedal.png", "'", "height=30, width=30></img>"), ifelse(RewardReviews>=100, paste(Reviewer,"<img src=", "'", "silvermedal.png", "'","height=30, width=30></img>"), ifelse(RewardReviews >= 10, paste(Reviewer,"<img src=","'","bronzemedal.png", "'", "height=30, width=30></img>"), Reviewer))))
-  #   # dplyr::mutate(Reviewer = ifelse(RewardReviews >= 10, paste0(Reviewer,"<img src=","'","bronzemedal.png", "'", "height=40, width=40></img>"), ""))%>%
-  #   # dplyr::mutate(Reviewer = ifelse(RewardReviews>=100, paste0(Reviewer,"<img src=", "'", "silvermedal.png", "'","height=40, width=40></img>"), paste(Reviewer)))%>%
-  #   # dplyr::mutate(Reviewer = ifelse(RewardReviews>=200, paste0(Reviewer,"<img src=", "'", "goldmedal.png", "'", "height=40, width=40></img>"), paste(Reviewer)))
-  #   # rewardreviews<-leaderboard%>%
-  #   #   select(Reviewer,RewardReviews)%>%
-  #   #   arrange(desc(RewardReviews))%>%
-  #   #   mutate(Badge = ifelse(RewardReviews >= 10, paste0("<img src=","'","bronzemedal.png", "'", "height=40, width=40></img>"), ""))%>%
-  #   #   mutate(Badge = ifelse(RewardReviews>=100, paste0("<img src=", "'", "silvermedal.png", "'","height=40, width=40></img>"), paste(Badge)))%>%
-  #   #   mutate(Badge = ifelse(RewardReviews>=200, paste0("<img src=", "'", "goldmedal.png", "'", "height=40, width=40></img>"), paste(Badge)))
-  #   return(rewardreviews[,c("Reviewer", "RewardReviews")])
-  # })
-  # 
-  # monthreviews <- reactive({
-  #   monthreviews <- reviewerSession() %>%
-  #     #    dplyr::filter(DateCreated >= lubridate::today() - lubridate::days(30)) %>%
-  #     #    dplyr::group_by(InvestigatorIdStr,  Name) %>%
-  #     #    dplyr::summarise(MonthReviews = n(),.groups="drop") %>%    
-  #     #    dplyr::arrange(desc(MonthReviews))%>%
-  #     #    dplyr::rename(Reviewer = Name)
-  #     # monthreviews<-leaderboard%>%
-  #     #   select(Reviewer, MonthReviews)%>%
-  #     #   arrange(desc(MonthReviews))%>%
-  #     #   top_n(n=5)
-  #     # month<-reviewerSession() %>%
-  #     dplyr::filter(year(DateTimeCreated) == year(Sys.time()) & month(DateTimeCreated) == month(Sys.time())) %>%
-  #     dplyr::group_by(InvestigatorIdStr,  Name) %>%
-  #     dplyr::summarise(MonthReviews = n(),.groups="drop") %>%    
-  #     dplyr::arrange(desc(MonthReviews))%>%
-  #     dplyr::rename(Reviewer = Name) 
-  #   # 
-  #   # month
-  #   return(monthreviews[c("Reviewer", "MonthReviews")])
-  # })
-  # 
-  # output$alltimeleaderboard<-
-  #   DT::renderDataTable(DT::datatable(
-  #     alltimereviews(),# rownames = FALSE,
-  #     colnames=c("Reviewer", "N"  # "Number of reviews (all time)"
-  #     ),
-  #     options = list(
-  #       pageLength = 10,dom = 'tp'
-  #     )    ))
-  # 
-  # output$monthleaderboard<-
-  #   DT::renderDataTable(DT::datatable(
-  #     monthreviews(), # rownames = FALSE,
-  #     colnames=c("Reviewer","N" # "Number of reviews (all time)"
-  #     ) # c(  "Number of reviews (past 30 days)" 
-  #     ,
-  #     options = list(
-  #       pageLength = 10,dom = 'tp'
-  #     )    ))
-  # 
-  # output$rewardleaderboard<-
-  #   DT::renderDataTable(DT::datatable(
-  #     rewardreviews(), # rownames = FALSE,
-  #     colnames=c("Reviewer", "N" # "Number of reviews", "Badge"
-  #     ),
-  #     escape=F    ,
-  #     options = list(
-  #       pageLength = 10,dom = 'tp'
-  #     )
-  #   ))
+
 })
