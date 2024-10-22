@@ -29,19 +29,19 @@ shinyServer(function(input, output, session) {
   createStatistics <- function(irow){
     reviewSummary = progressSummary()[irow, ]
     list(
-      UpdateDate = reviewSummary$ReviewLatestUpdatedDate,
+      UpdateDate = reviewSummary$lastUpdate,
       nUniquePubs = reviewSummary$nUniquePublications,
       nIncludedPubs =      reviewSummary$nIncludedPublications,
       nDrugMeetLogic = reviewSummary$nDrugMeetLogic,
       nPublicationsMeetLogic = reviewSummary$nPublicationsMeetLogic,
       nCoreDrugs = reviewSummary$nCoreDrugs,
       nCoreDrugsPubs =  reviewSummary$nCoreDrugPublications,
-      nSingleAnnotated = reviewSummary$nCoreSingleAnnotated,
-      percentSingleAnnotated =  round(reviewSummary$nCoreSingleAnnotated / reviewSummary$nCoreDrugPublications * 100,2),
-      nDualAnnotated = reviewSummary$nCoreDualAnnotated,
-      percentDualAnnotated =  round(reviewSummary$nCoreDualAnnotated / reviewSummary$nCoreDrugPublications * 100,2),
-      nReconciled = reviewSummary$nCoreReconciled,
-      percentReconciled = round(reviewSummary$nCoreReconciled / reviewSummary$nCoreDrugPublications * 100,2)
+      nSingleAnnotated = reviewSummary$nSingleAnnotated,
+      percentSingleAnnotated =  round(reviewSummary$nSingleAnnotated / reviewSummary$nCoreDrugPublications * 100,2),
+      nDualAnnotated = reviewSummary$nDualAnnotated,
+      percentDualAnnotated =  round(reviewSummary$nDualAnnotated / reviewSummary$nCoreDrugPublications * 100,2),
+      nReconciled = reviewSummary$nReconciled,
+      percentReconciled = round(reviewSummary$nReconciled / reviewSummary$nCoreDrugPublications * 100,2)
     )
   }
   
