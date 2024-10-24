@@ -35,5 +35,7 @@ library(jsonlite)
 
 source('configure.R')
 
-drugList <- googlesheets4::read_sheet(googleSheetId, sheet = "drugList") 
+# drugList <- googlesheets4::read_sheet(googleSheetId, sheet = "drugList") 
 
+drugList <- googlesheets4::read_sheet(googleSheetId, sheet = "longlist")[ ,1]%>%
+  mutate(Drug = tolower(Drug))

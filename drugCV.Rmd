@@ -23,7 +23,7 @@ header-includes:
 tables: yes
 
 params:
-  x: levetiracetam
+  x: prucalopride
 ---
 
 ```{r library, echo=FALSE, include=FALSE}
@@ -57,10 +57,6 @@ library(DBI)
 
 
 ```{r setup, include=FALSE}
-# googleSheetId <- "1j1wzkibgoGxyJvmYjI-fWDYvWNpW1k6sDgTFxKq7QcI"
-# googlesheets4::gs4_deauth()
-# drugScores2017<-read.csv("drugScores2017.csv")
-# 
 source("configure.R")
 source("getClinicalTrialsData.R")
 
@@ -88,9 +84,9 @@ selecteddrugranklist <- drugSummary %>%
 row.names(selecteddrugranklist)<- c("Drug","Clinical Drug Score", "Number of clinical publications","Median Efficacy Score (-2 - 4)","Median Safety Score (0-3)","Median number of participants","Median Quality Score (out of 24)")
 
 
-
+if(ncol(selecteddrugranklist)>0){
 kbl(selecteddrugranklist, digits=3)%>%
-   row_spec(0, bold=TRUE)
+   row_spec(0, bold=TRUE)} else print("No scored ReLiSyR clinical publications for selected drug")
 
 
 
@@ -103,6 +99,7 @@ selectedDrugScore<-drugScores%>%
   select("y")%>%
   as.numeric()
 
+if(!is.na(selectedDrugScore)){
 drugScoresPlot<-ggplot(drugScores, aes(y=y, x=""))+
   labs(y="Drug Score", x="")+
   geom_violin(trim=F, fill="cadetblue2")+
@@ -110,12 +107,12 @@ drugScoresPlot<-ggplot(drugScores, aes(y=y, x=""))+
   annotate(geom="point", x="", y=selectedDrugScore, shape=13, colour="red3", size=5,stroke=2)
 
 drugScoresPlot
-
+}
 
 ```
 
 ```{r fig-nocap-margin-second, fig.margin=TRUE, fig.width=4, fig.height=4, cache=TRUE, echo=FALSE, fig.cap="Clinical subscores scatter plot, selected drug shown in black"}
-
+if(!is.na(selectedDrugScore)){
 drugbubble<-function(){
   df<-drugSummary[drugSummary$Drug==params$x,]
   drugSafety<-df$safetyScore
@@ -149,7 +146,7 @@ drugbubble<-function(){
 }
 
 drugbubble()
-
+}
 ```
 \ 
 
@@ -249,6 +246,7 @@ clinicalOverview <- rbind(clinicalOverview, sumrow)
 
 
 colnames(clinicalOverview)<-c("Disease", "Study Type", "Phase", "Number of Studies", "Number of Patients")
+if(nrow(clinicalOverview)>1){
 kbl(clinicalOverview) %>%
   row_spec(0, bold=TRUE)%>%
   row_spec((dim(clinicalOverview)-1)[1], hline_after = TRUE)%>%
@@ -257,6 +255,7 @@ kbl(clinicalOverview) %>%
            # background = "#ECECEC", 
            hline_after = TRUE)%>%
   collapse_rows(columns = 1)
+}
 
 ```
 
@@ -282,6 +281,8 @@ clinicalPubs1<-publicationList%>%
     "distanceScore",
     "PdfRelativePath"
   )
+
+if(nrow(clinicalPubs1)>0){
 
 urls<-clinicalPubs1$PdfRelativePath
 
@@ -309,7 +310,7 @@ x<- kbl(clinicalPubs2, format="latex", digits=3, longtable=TRUE)%>%
   column_spec( 1, link = urls, width="7cm")%>%
   row_spec( 0, bold=TRUE)
 
-x
+x}
 #%>%
 #  column_spec(1, width = "7cm")
 
@@ -390,7 +391,7 @@ Alzheimer disease or Alzheimer dementia studies from ClinicalTrials.gov for `r p
 ADClinicalTrials <- getADClinicalTrialsData(params$x)
 
 
-if(nrow(ADClinicalTrials)>0){
+if(!is.null(ADClinicalTrials)){
   ADClinicalTrials <- ADClinicalTrials %>%
     select(-studyType)%>%
     mutate(overallStatus = str_replace_all(tolower(overallStatus), "_", " "))%>%
@@ -419,7 +420,7 @@ Studies for conditions (neurodegenerative diseases, vascular dementia, cerebral 
 OtherClinicalTrials <- getOtherNeuroClinicalTrialsData(params$x)
 
 
-if(nrow(OtherClinicalTrials)>0){
+if(!is.null(OtherClinicalTrials)){
   OtherClinicalTrials <- OtherClinicalTrials %>%
     select(-studyType)%>%
     mutate(overallStatus = str_replace_all(tolower(overallStatus), "_", " "))%>%

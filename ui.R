@@ -78,7 +78,7 @@ body <- dashboardBody(
         tabsetPanel(type="tabs",
                     tabPanel("Overview",
                              box(title="Clinical scores overview",width=12, height=500,
-                                 p("Violin plot of drug scores, selected drug highlighted in red; bubble plot of clinical subscores with selected drug highlighted in black."),
+                                 p("Left: Violin plot of drug scores. If there are annotated papers within ReLiSyR clinical review, the selected drug will be highlighted in red; Right: bubble plot of clinical subscores with selected drug highlighted in black."),
                                  fluidRow(
                                    column(width = 6,
                                           plotOutput("selecteddrugrankchart") ),
@@ -106,28 +106,8 @@ body <- dashboardBody(
                     #            )
                     #          )),
                     tabPanel("Clinical Summary",
-                             fluidRow(
-                               column(width=4,
-                                      box(width= NULL, height = 400, status = "warning", 
-                                          h4( "Score Summary"),
-                                          DT::dataTableOutput("selectedclinscoresummary")  %>% withSpinner(color="#0dc5c1"))),
-                               
-                               column(width=4, 
-                                      box(width= NULL, height=400,status = "danger", 
-                                          title= "Study details", plotlyOutput("sb3") %>% withSpinner(color="#0dc5c1"))),
-                               
-                               column(width=4,
-                                      box(width=NULL, height=400, 
-                                          title = "Number of participants",status = "success", 
-                                          plotlyOutput("ptsb") %>% withSpinner(color="#0dc5c1")))
+                               uiOutput('clinicalsummary')
                              ),
-                             
-                             fluidRow(box(width=12,
-                                          h4("Publications for selected drug")
-                                          ,status = "info", 
-                                          DT::dataTableOutput("drugclinicalpublications") %>% withSpinner(color="#0dc5c1")
-                             )
-                             )),
                     tabPanel("in vivo Summary",
                              fluidRow(box(width=12,
                                           h4("Animal in vivo Publications for selected drug")

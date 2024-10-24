@@ -564,6 +564,7 @@ shinyServer(function(input, output, session) {
   
   ########drugtable-------------------------------------
   output$selecteddrugranklist <- 
+    try({
     DT::renderDataTable(DT::datatable(
       selecteddrugranklist() 
       , rownames=F
@@ -571,12 +572,13 @@ shinyServer(function(input, output, session) {
       caption= htmltools::tags$caption(style = 'caption-side:bottom; text-align:left;',   c("Current results summary of (i) clinical review: For each publication, we calculated a distance score based on Euclidean distance of efficacy and safety scores weighted by quality and study size. For each drug, we calculate a drug score using the number of publications describing the drug (n) and median publication distance score for all publications describing data for that drug:", withMathJax("$$\\text{drug score}\\ = log10{(n+1)} \\times {(\\text{median distance score})}$$"), "Separately, we calculate median subscores for efficacy, safety, quality and number of participants across all publications for each drug. See 'About' tab for more details on scoring; (ii) in vivo and (iii) in vitro review are reported here by the standard mean deviation (SMD) in survival and cell death studies respectively calculated from our meta-analysis. n(Pub) refers to number of publications annotated for each drug in our review."), escape=F) 
       , options = list(dom = 't')
       , extensions = 'Responsive'
-    ))
+    ))}, silent = TRUE)
   
 
   
   #####ClinicalScoreSummary-------------------------------------
   selectedclinscoresummary <- reactive({
+    try({
     drugscoredata <- drugSummary() %>%
       filter(Drug %in% input$drug) %>%
       select(
@@ -601,9 +603,11 @@ shinyServer(function(input, output, session) {
     
     tdrugscoredata <- t(as.matrix(drugscoredata))
     return(tdrugscoredata)
+    }, silent = TRUE)
   })
   
   output$selectedclinscoresummary <-
+    try({
     DT::renderDataTable(DT::datatable(
       selectedclinscoresummary(),
       rownames=c("Drug Score",
@@ -623,10 +627,11 @@ shinyServer(function(input, output, session) {
           fontWeight = styleEqual("Product Score", "bold"),
           backgroundColor = styleEqual("Product Score", "lightblue")
         )
-    )
+    )}, silent = TRUE)
   
   ######drugsunburst-------------------------------------
   sdsunburstdata <- reactive({
+    try({
     drugsbdata<-publicationList() %>%
       filter(Drug %in% input$drug)%>%
       select(Disease, studyType, phase, StudyIdStr)%>%
@@ -686,9 +691,12 @@ shinyServer(function(input, output, session) {
     df<-rbind(dfroot,df)
     
     return(df)
+    }, silent = TRUE)
   })
   
-  output$sb3 <- renderPlotly({
+  output$sb3 <- try({
+    renderPlotly({
+      try({
     p <- plot_ly(sdsunburstdata(),
                  ids = ~ids,
                  labels = ~labels,
@@ -710,11 +718,12 @@ shinyServer(function(input, output, session) {
     
     event_register(p, 'plotly_click')
     
-    p
-  })
+    p}, silent = TRUE)
+  })}, silent = TRUE)
   
   #####drugptsunburst---------------------
   sdptsunburstdata <- reactive({
+    try({
     drugptsbdata<-publicationList() %>%
       filter(Drug %in% input$drug)%>%
       select(Disease, studyType, phase, nPatients)%>%
@@ -768,10 +777,11 @@ shinyServer(function(input, output, session) {
     )
     
     df<-rbind(dfroot,df)
-    return(df)
+    return(df)}, silent = TRUE)
   })
   
-  output$ptsb <- renderPlotly({
+  output$ptsb <- try({renderPlotly({
+    try({
     p <- plot_ly(sdptsunburstdata(),
                  ids = ~ids,
                  labels = ~labels,
@@ -793,11 +803,12 @@ shinyServer(function(input, output, session) {
     
     event_register(p, 'plotly_click')
     
-    p
-  })
+    p}, silent = TRUE)
+  })}, silent = TRUE)
   
   #####clinicalpubs-------------------------------------
   selecteddrugclinicalpubtable <- reactive({
+    
     drugclinicalpubtable <- publicationList() %>%
       filter(Drug %in% input$drug) %>%
       select(
@@ -814,11 +825,53 @@ shinyServer(function(input, output, session) {
         "safteyScores",
         "qualityScore"
       )
+    
+    if(nrow(drugclinicalpubtable)==0) drugclinicalpubtable <- NULL
 
     return(drugclinicalpubtable)
   })
   
-  output$drugclinicalpublications <-
+  clinicalpubsUi1 <- reactive({
+    clinicalpubsUi1 <- 
+      fluidRow(
+      fluidRow(
+        column(width=4,
+               box(width= NULL, height = 400, status = "warning", 
+                   h4( "Score Summary"),
+                   DT::dataTableOutput("selectedclinscoresummary")  %>% withSpinner(color="#0dc5c1"))),
+        
+        column(width=4, 
+               box(width= NULL, height=400,status = "danger", 
+                   title= "Study details", plotlyOutput("sb3") %>% withSpinner(color="#0dc5c1"))),
+        
+        column(width=4,
+               box(width=NULL, height=400, 
+                   title = "Number of participants",status = "success", 
+                   plotlyOutput("ptsb") %>% withSpinner(color="#0dc5c1")))
+      ),
+    fluidRow(box(width=12,
+                 h4("Publications for selected drug")
+                 ,status = "info",
+                 DT::dataTableOutput("drugclinicalpublications") %>% withSpinner(color="#0dc5c1")))
+    )
+    
+    
+  })
+
+  
+  
+  output$clinicalsummary<-renderUI({
+    if(is.null(selecteddrugclinicalpubtable())){
+      h3("No annotated clinical publications within ReLiSyR for selected drug.")
+    } else {
+      clinicalpubsUi1()
+      }
+    
+    
+  })
+  
+  
+  output$drugclinicalpublications <-try(
     DT::renderDataTable(DT::datatable(
       selecteddrugclinicalpubtable(), 
       rownames = FALSE,
@@ -831,7 +884,7 @@ shinyServer(function(input, output, session) {
                                                     list(extend = "print")
                                      )),
       extensions = c('Buttons','Responsive')
-    ))
+    )), silent = TRUE)
   
   ###drug animal pubs -----
   
@@ -893,6 +946,7 @@ shinyServer(function(input, output, session) {
     data <- fromJSON(httr::content(xmldata, "text"))
     results <- data$studies%>%as.data.frame()
     
+    try({
     results<-results%>%
       unnest(cols=c("protocolSection"))
     results<-results%>%
@@ -918,6 +972,9 @@ shinyServer(function(input, output, session) {
     
     results <- results%>%
       rename(`intervention description` = description)
+    
+    })
+    if(nrow(results)==0) results <- NULL 
     
     return(results)
     

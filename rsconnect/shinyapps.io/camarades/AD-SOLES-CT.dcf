@@ -5,9 +5,9 @@ account: camarades
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13004018
-bundleId: 9256189
+bundleId: 9265243
 url: https://camarades.shinyapps.io/AD-SOLES-CT/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: drugCV_files/figure-latex/fig-nocap-margin-first-1.pdf|drugCV_files/figure-latex/fig-nocap-margin-second-1.pdf|drugCV.aux|drugCV.log|drugCV.out|drugCV.pdf|file2a2fa03a57321b.log|file2a2fa03ab701f8.log|file2b614b564e305b.log
+ignoredFiles: drugCV_files/figure-latex/fig-nocap-margin-first-1.pdf|drugCV_files/figure-latex/fig-nocap-margin-second-1.pdf|drugCV.aux|drugCV.log|drugCV.out|drugCV.pdf|file2a2fa03a57321b.log|file2a2fa03ab701f8.log|file2b614b564e305b.log|file2e5dd2347cf476.log
