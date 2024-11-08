@@ -5,7 +5,7 @@ account: camarades
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13004018
-bundleId: 9265243
+bundleId: 9336144
 url: https://camarades.shinyapps.io/AD-SOLES-CT/
 version: 1
 asMultiple: FALSE

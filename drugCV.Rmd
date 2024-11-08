@@ -6,10 +6,13 @@ date: "`r format(Sys.time(), '%d %B %Y')`"
 output: 
   tint::tintPdf:
   template: "tintPdf-template.tex"
+  pdf_engine: lualatex
 
 
 header-includes:
 - \usepackage{booktabs}
+- \usepackage[utf8]{inputenc}
+- \usepackage{amssymb}
 - \usepackage{longtable}
 - \usepackage{array}
 - \usepackage{multirow}
@@ -19,11 +22,15 @@ header-includes:
 - \DeclareUnicodeCharacter{3B1}{$\alpha$}
 - \DeclareUnicodeCharacter{2265}{$\geq$}
 - \DeclareUnicodeCharacter{2261}{$\equiv$}
+# - \DeclareUnicodeCharacter{FF08}{\(}
+# - \DeclareUnicodeCharacter{FF09}{\)}
+
+
 
 tables: yes
 
 params:
-  x: prucalopride
+  x: cilostazol
 ---
 
 ```{r library, echo=FALSE, include=FALSE}
@@ -386,7 +393,7 @@ selecteddruganimalpublinks <- paste0("https://doi.org/" , selecteddruganimalpubt
 
 Alzheimer disease or Alzheimer dementia studies from ClinicalTrials.gov for `r params$x`
 
-```{r AD clinicaltrials, message = FALSE, warning = FALSE}
+```{r AD clinicaltrials, message = FALSE, warning = FALSE, results = "asis"}
   
 ADClinicalTrials <- getADClinicalTrialsData(params$x)
 
@@ -415,7 +422,7 @@ if(!is.null(ADClinicalTrials)){
 
 Studies for conditions (neurodegenerative diseases, vascular dementia, cerebral small vessel disease, stroke) from ClinicalTrials.gov for `r params$x`
 
-```{r other diseases clinicaltrials, message = FALSE, warning = FALSE}
+```{r other diseases clinicaltrials, message = FALSE, warning = FALSE, results = "asis"}
   
 OtherClinicalTrials <- getOtherNeuroClinicalTrialsData(params$x)
 
@@ -424,11 +431,15 @@ if(!is.null(OtherClinicalTrials)){
   OtherClinicalTrials <- OtherClinicalTrials %>%
     select(-studyType)%>%
     mutate(overallStatus = str_replace_all(tolower(overallStatus), "_", " "))%>%
+    mutate(description = iconv(description, to = "ASCII"))%>%
     mutate(description = str_trunc(description, 500))%>%
     rename(`intervention description` = description)
   
+
+  
   OtherClinicalTrialsLinks <- paste0("https://clinicaltrials.gov.uk/study/",OtherClinicalTrials$nctId)
   
+
   kbl(OtherClinicalTrials, longtable = TRUE, row.names = FALSE)%>%
     column_spec(1, link = OtherClinicalTrialsLinks, width = "2cm")%>%
     column_spec(2, width = "3cm")%>%
@@ -448,7 +459,7 @@ if(!is.null(OtherClinicalTrials)){
 ```{r chembl data, warning = F, message = F, results = "asis"}
 
 drug <- params$x
-
+drug <- str_replace(drug, "\\s", "%20")
 
 url <- paste0("https://www.ebi.ac.uk/chembl/api/data/molecule?pref_name__icontains=", drug)
 data <- read_html(url)
